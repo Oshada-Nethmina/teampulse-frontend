@@ -4,13 +4,15 @@ export interface ProjectResponse {
   id: number;
   name: string;
   description: string;
-  isActive: boolean;
+  active: boolean;
+  assignedMemberIds?: number[];
 }
 
 export interface ProjectRequest {
   name: string;
   description: string;
-  isActive?: boolean;
+  active?: boolean;
+  assignedMemberIds?: number[];
 }
 
 export const projectService = {
