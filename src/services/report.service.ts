@@ -2,30 +2,47 @@ import { fetchClient } from './api';
 import { ProjectResponse } from './project.service';
 
 export interface ReportRequest {
-  weekStartDate: string; // ISO Date string
+  weekStartDate: string;
+  weekEndDate: string;
+
   projectId: number;
+
   tasksCompleted: string;
-  tasksPlanned: string;
+  tasksPlannedNext: string;
+
   blockers: string;
+
   hoursWorked?: number;
-  notes?: string;
+
+  notesLinks?: string;
+
+  submit?: boolean;
 }
 
 export interface ReportResponse {
   id: number;
+
+  userId: number;
+  userFullName: string;
+
+  projectId: number | null;
+  projectName: string | null;
+
   weekStartDate: string;
-  project: ProjectResponse;
+  weekEndDate: string;
+
   tasksCompleted: string;
-  tasksPlanned: string;
+  tasksPlannedNext: string;
+
   blockers: string;
   hoursWorked: number;
-  notes: string;
+
+  notesLinks: string;
+
+  status: string;
+
   submittedAt: string;
-  user?: {
-    id: number;
-    fullName: string;
-    email: string;
-  };
+  updatedAt: string;
 }
 
 export const reportService = {

@@ -2,8 +2,8 @@ import { fetchClient } from './api';
 
 export interface DashboardSummaryResponse {
   totalReportsSubmitted: number;
-  complianceRate: number;
-  openBlockers: number;
+  complianceRatePercent: number;
+  openBlockersCount: number;
   // Based on your chart requirements, these might also come from here or separate endpoints
   tasksCompletedTrend?: any[];
   submissionStatusByMember?: any[];
