@@ -76,15 +76,15 @@ export default function DashboardPage() {
       const filters: any = {};
       if (filterUserId) filters.userId = filterUserId;
       if (filterProjectId) filters.projectId = filterProjectId;
-      
+
       const data = await reportService.searchReports(filters);
-      
+
       // Client-side date filter if backend doesn't support exact week matching
       let results = data;
       if (filterWeek) {
         results = results.filter(r => r.weekStartDate === filterWeek);
       }
-      
+
       setFilteredReports(results);
     } catch (error) {
       console.error("Failed to fetch filtered reports:", error);
@@ -121,7 +121,7 @@ export default function DashboardPage() {
   // Calculate real submission data based on current filtered view
   const submittedCount = filteredReports.length;
   const pendingCount = Math.max(0, teamMembers.length - submittedCount);
-  
+
   const submissionData = [
     { name: 'Submitted', value: submittedCount },
     { name: 'Pending', value: pendingCount },
@@ -140,9 +140,25 @@ export default function DashboardPage() {
       { name: "Fri", completed: 28 },
     ];
 
-  const visibleMembers = filterUserId 
-    ? teamMembers.filter(m => m.id === filterUserId) 
-    : teamMembers;
+  const visibleMembers = teamMembers.filter(member => {
+
+    // Filter by selected member
+    if (filterUserId && member.id !== filterUserId) {
+      return false;
+    }
+
+    // Filter by selected project
+    if (filterProjectId) {
+
+      const project = projects.find(p => p.id === filterProjectId);
+
+      if (!project) return false;
+
+      return project.assignedMemberIds?.includes(member.id);
+    }
+
+    return true;
+  });
 
   const handleGenerateSummary = async () => {
     setIsChatOpen(true);
@@ -168,7 +184,7 @@ export default function DashboardPage() {
               <h1 className="text-2xl font-bold text-gray-900">Manager Dashboard</h1>
               <p className="text-sm text-gray-500 mt-1">Overview of team performance and reports.</p>
             </div>
-            
+
             <button
               onClick={handleGenerateSummary}
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm shadow-emerald-200"
@@ -203,7 +219,7 @@ export default function DashboardPage() {
                   <div>
                     <p className="text-sm font-medium text-gray-500">Compliance Rate</p>
                     <p className="text-2xl font-bold text-gray-900">
-                      {summary?.complianceRate !== undefined ? `${(summary.complianceRate * 100).toFixed(0)}%` : '85%'}
+                      {summary?.complianceRatePercent?.toFixed(1) ?? "0"}%
                     </p>
                   </div>
                 </div>
@@ -214,7 +230,7 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-500">Open Blockers</p>
-                    <p className="text-2xl font-bold text-gray-900">{summary?.openBlockers || 0}</p>
+                    <p className="text-2xl font-bold text-gray-900">{summary?.openBlockersCount ?? 0}</p>
                   </div>
                 </div>
               </div>
@@ -268,7 +284,7 @@ export default function DashboardPage() {
                     <Filter className="w-5 h-5 text-emerald-600" />
                     Team Reports
                   </h3>
-                  
+
                   {/* Filters */}
                   <div className="flex flex-wrap gap-3">
                     <div className="relative">
@@ -317,7 +333,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 {isReportsLoading ? (
                   <div className="flex justify-center py-12">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-600"></div>
@@ -335,67 +351,68 @@ export default function DashboardPage() {
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-100">
                         {visibleMembers.map((member) => {
-                          const report = filteredReports.find(r => r.user?.id === member.id);
+                          const report = filteredReports.find(r => r.userId === member.id);
                           const isSubmitted = !!report;
-                          
+
                           return (
-                          <tr key={member.id} className="hover:bg-emerald-50/20 transition-colors">
-                            <td className="px-6 py-4">
-                              <div className="flex items-center">
-                                <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs border border-emerald-200">
-                                  {member.fullName?.charAt(0) || 'U'}
-                                </div>
-                                <div className="ml-3">
-                                  <p className="text-sm font-medium text-gray-900">{member.fullName || 'Unknown User'}</p>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              {isSubmitted ? (
-                                <>
-                                  <span className="inline-flex items-center rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-medium text-teal-700 ring-1 ring-inset ring-teal-600/20 mb-1">
-                                    {report.project?.name || 'Unknown Project'}
-                                  </span>
-                                  <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                                    <Calendar className="w-3 h-3" />
-                                    {report.weekStartDate}
+                            <tr key={member.id} className="hover:bg-emerald-50/20 transition-colors">
+                              <td className="px-6 py-4">
+                                <div className="flex items-center">
+                                  <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs border border-emerald-200">
+                                    {member.fullName?.charAt(0) || 'U'}
                                   </div>
-                                </>
-                              ) : (
-                                <span className="text-sm text-gray-400 italic">No report filed</span>
-                              )}
-                            </td>
-                            <td className="px-6 py-4">
-                              {isSubmitted ? (
-                                <>
-                                  <div className="text-sm text-gray-700 line-clamp-1 max-w-xs mb-1" title={report.tasksCompleted}>
-                                    <CheckCircle2 className="w-3 h-3 text-emerald-500 inline mr-1" />
-                                    {report.tasksCompleted}
+                                  <div className="ml-3">
+                                    <p className="text-sm font-medium text-gray-900">{member.fullName || 'Unknown User'}</p>
                                   </div>
-                                  {report.blockers && (
-                                    <div className="text-xs text-amber-700 line-clamp-1 max-w-xs" title={report.blockers}>
-                                      <AlertTriangle className="w-3 h-3 inline mr-1" />
-                                      {report.blockers}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                {isSubmitted ? (
+                                  <>
+                                    <span className="inline-flex items-center rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-medium text-teal-700 ring-1 ring-inset ring-teal-600/20 mb-1">
+                                      {report.projectName || 'Unknown Project'}
+                                    </span>
+                                    <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                                      <Calendar className="w-3 h-3" />
+                                      {report.weekStartDate}
                                     </div>
-                                  )}
-                                </>
-                              ) : (
-                                <span className="text-sm text-gray-400 italic">-</span>
-                              )}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              {isSubmitted ? (
-                                <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
-                                  Submitted
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
-                                  Pending
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        )})}
+                                  </>
+                                ) : (
+                                  <span className="text-sm text-gray-400 italic">No report filed</span>
+                                )}
+                              </td>
+                              <td className="px-6 py-4">
+                                {isSubmitted ? (
+                                  <>
+                                    <div className="text-sm text-gray-700 line-clamp-1 max-w-xs mb-1" title={report.tasksCompleted}>
+                                      <CheckCircle2 className="w-3 h-3 text-emerald-500 inline mr-1" />
+                                      {report.tasksCompleted}
+                                    </div>
+                                    {report.blockers && (
+                                      <div className="text-xs text-amber-700 line-clamp-1 max-w-xs" title={report.blockers}>
+                                        <AlertTriangle className="w-3 h-3 inline mr-1" />
+                                        {report.blockers}
+                                      </div>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span className="text-sm text-gray-400 italic">-</span>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                {isSubmitted ? (
+                                  <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                                    Submitted
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                                    Pending
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          )
+                        })}
                         {visibleMembers.length === 0 && (
                           <tr>
                             <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
@@ -435,10 +452,10 @@ export default function DashboardPage() {
                     </div>
                   )}
                   {messages.map((msg, idx) => (
-                     <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${msg.role === 'user'
-                          ? 'bg-emerald-600 text-white rounded-br-none'
-                          : 'bg-white border border-emerald-100 text-gray-800 rounded-bl-none shadow-sm'
+                        ? 'bg-emerald-600 text-white rounded-br-none'
+                        : 'bg-white border border-emerald-100 text-gray-800 rounded-bl-none shadow-sm'
                         }`}>
                         {msg.text}
                       </div>

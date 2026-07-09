@@ -4,19 +4,23 @@ import { useEffect, useState } from 'react';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import AppLayout from '../../components/AppLayout';
 import { projectService, ProjectResponse, ProjectRequest } from '../../services/project.service';
+import { userService, UserResponse } from '../../services/user.service';
 import { Plus, Edit2, Trash2, X, AlertCircle, Briefcase, CheckCircle } from 'lucide-react';
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<ProjectResponse | null>(null);
-  
+
+  const [teamMembers, setTeamMembers] = useState<UserResponse[]>([]);
+
   const [formData, setFormData] = useState<ProjectRequest>({
     name: '',
     description: '',
-    isActive: true,
+    active: true,
+    assignedMemberIds: [],
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,7 +28,17 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     fetchProjects();
+    fetchTeamMembers();
   }, []);
+
+  const fetchTeamMembers = async () => {
+    try {
+      const members = await userService.getTeamMembers();
+      setTeamMembers(members);
+    } catch (error) {
+      console.error("Failed to fetch team members:", error);
+    }
+  };
 
   const fetchProjects = async () => {
     try {
@@ -44,11 +58,12 @@ export default function ProjectsPage() {
       setFormData({
         name: project.name,
         description: project.description,
-        isActive: project.isActive,
+        active: project.active,
+        assignedMemberIds: project.assignedMemberIds || [],
       });
     } else {
       setEditingProject(null);
-      setFormData({ name: '', description: '', isActive: true });
+      setFormData({ name: '', description: '', active: true, assignedMemberIds: [] });
     }
     setError('');
     setIsModalOpen(true);
@@ -59,13 +74,13 @@ export default function ProjectsPage() {
     try {
       setIsSubmitting(true);
       setError('');
-      
+
       if (editingProject) {
         await projectService.updateProject(editingProject.id, formData);
       } else {
         await projectService.createProject(formData);
       }
-      
+
       setIsModalOpen(false);
       fetchProjects();
     } catch (err: any) {
@@ -144,11 +159,10 @@ export default function ProjectsPage() {
                         <div className="text-sm text-gray-500 truncate max-w-xs">{project.description}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          project.isActive ? 'bg-teal-50 text-teal-700 ring-1 ring-inset ring-teal-600/20' : 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/10'
-                        }`}>
-                          {project.isActive && <CheckCircle className="w-3 h-3" />}
-                          {project.isActive ? 'Active' : 'Inactive'}
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${project.active ? 'bg-teal-50 text-teal-700 ring-1 ring-inset ring-teal-600/20' : 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/10'
+                          }`}>
+                          {project.active && <CheckCircle className="w-3 h-3" />}
+                          {project.active ? 'Active' : 'Inactive'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -196,7 +210,7 @@ export default function ProjectsPage() {
                       <X className="w-5 h-5" />
                     </button>
                   </div>
-                  
+
                   {error && (
                     <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm flex items-center gap-2">
                       <AlertCircle className="w-4 h-4" /> {error}
@@ -227,20 +241,42 @@ export default function ProjectsPage() {
                         placeholder="Brief description of the project"
                       />
                     </div>
-                    {editingProject && (
-                      <div className="flex items-center mt-4 p-3 bg-emerald-50 rounded-lg border border-emerald-100">
-                        <input
-                          id="is-active"
-                          type="checkbox"
-                          checked={formData.isActive}
-                          onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                          className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
-                        />
-                        <label htmlFor="is-active" className="ml-2 block text-sm text-emerald-900 font-medium">
-                          Active (Visible to team members)
-                        </label>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Assign Team Members (Optional)</label>
+                      <div className="max-h-32 overflow-y-auto border border-emerald-100 rounded-lg bg-gray-50 p-2 space-y-1">
+                        {teamMembers.map(member => (
+                          <label key={member.id} className="flex items-center p-2 hover:bg-emerald-50 rounded-md cursor-pointer transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={(formData.assignedMemberIds || []).includes(member.id)}
+                              onChange={(e) => {
+                                const newIds = e.target.checked 
+                                  ? [...(formData.assignedMemberIds || []), member.id]
+                                  : (formData.assignedMemberIds || []).filter(id => id !== member.id);
+                                setFormData({ ...formData, assignedMemberIds: newIds });
+                              }}
+                              className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                            />
+                            <span className="ml-2 text-sm text-gray-700">{member.fullName}</span>
+                          </label>
+                        ))}
+                        {teamMembers.length === 0 && (
+                          <div className="text-sm text-gray-500 p-2 text-center">No team members available.</div>
+                        )}
                       </div>
-                    )}
+                    </div>
+                    <div className="flex items-center mt-4 p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+                      <input
+                        id="is-active"
+                        type="checkbox"
+                        checked={formData.active}
+                        onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                        className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="is-active" className="ml-2 block text-sm text-emerald-900 font-medium">
+                        Active (Visible to team members)
+                      </label>
+                    </div>
                   </form>
                 </div>
                 <div className="bg-[#f8fcf9] px-4 py-4 sm:flex sm:flex-row-reverse sm:px-6 rounded-b-2xl border-t border-emerald-50">
@@ -250,7 +286,7 @@ export default function ProjectsPage() {
                     disabled={isSubmitting}
                     className="inline-flex w-full justify-center rounded-lg bg-emerald-600 px-4 py-2.5 text-base font-medium text-white shadow-sm shadow-emerald-200 hover:bg-emerald-700 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 transition-colors"
                   >
-                    {isSubmitting ? 'Saving...' : 'Save Project'}
+                    {isSubmitting ? (editingProject ? 'Updating...' : 'Saving...') : (editingProject ? 'Update Project' : 'Save Project')}
                   </button>
                   <button
                     type="button"

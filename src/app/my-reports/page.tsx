@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import dayjs from "dayjs";
 import ProtectedRoute from '../../components/ProtectedRoute';
 import AppLayout from '../../components/AppLayout';
 import { reportService, ReportResponse, ReportRequest } from '../../services/report.service';
 import { projectService, ProjectResponse } from '../../services/project.service';
-import { Plus, Calendar, Clock, AlertCircle, CheckCircle2, ChevronRight, X } from 'lucide-react';
+import { Plus, Calendar, Clock, AlertCircle, CheckCircle2, ChevronRight, X, ChevronDown } from 'lucide-react';
 
 export default function MyReportsPage() {
   const [reports, setReports] = useState<ReportResponse[]>([]);
@@ -14,12 +15,20 @@ export default function MyReportsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState<ReportRequest>({
     weekStartDate: '',
+    weekEndDate: '',
+
     projectId: 0,
+
     tasksCompleted: '',
-    tasksPlanned: '',
+    tasksPlannedNext: '',
+
     blockers: '',
+
     hoursWorked: undefined,
-    notes: '',
+
+    notesLinks: '',
+
+    submit: false,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,14 +47,14 @@ export default function MyReportsPage() {
       ]);
       setReports(reportsData);
       setProjects(projectsData);
-      
+
       // Set default week start date to last Monday
       const today = new Date();
       const day = today.getDay();
       const diff = today.getDate() - day + (day === 0 ? -6 : 1);
       const monday = new Date(today.setDate(diff));
       setFormData(prev => ({ ...prev, weekStartDate: monday.toISOString().split('T')[0] }));
-      
+
     } catch (error) {
       console.error("Failed to fetch data:", error);
     } finally {
@@ -53,11 +62,25 @@ export default function MyReportsPage() {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
+
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'projectId' || name === 'hoursWorked' ? Number(value) : value,
+      [name]:
+        name === "projectId" || name === "hoursWorked"
+          ? Number(value)
+          : value,
+
+      ...(name === "weekStartDate"
+        ? {
+          weekEndDate: dayjs(value)
+            .add(6, "day")
+            .format("YYYY-MM-DD"),
+        }
+        : {}),
     }));
   };
 
@@ -71,18 +94,34 @@ export default function MyReportsPage() {
     try {
       setIsSubmitting(true);
       setError('');
-      await reportService.createReport(formData);
+      const payload = {
+        ...formData,
+        weekEndDate: dayjs(formData.weekStartDate)
+          .add(6, "day")
+          .format("YYYY-MM-DD"),
+        submit: true,
+      };
+      console.log(payload);
+      await reportService.createReport(payload);
       setIsModalOpen(false);
       fetchData(); // Refresh list
       // Reset form
       setFormData({
         weekStartDate: formData.weekStartDate,
+        weekEndDate: formData.weekEndDate,
+
         projectId: 0,
+
         tasksCompleted: '',
-        tasksPlanned: '',
+        tasksPlannedNext: '',
+
         blockers: '',
+
         hoursWorked: undefined,
-        notes: '',
+
+        notesLinks: '',
+
+        submit: false,
       });
     } catch (err: any) {
       setError(err.message || 'Failed to submit report');
@@ -142,7 +181,7 @@ export default function MyReportsPage() {
                           <p className="text-sm font-medium text-emerald-700">Week of {report.weekStartDate}</p>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="inline-flex items-center rounded-full bg-teal-50 px-2 py-1 text-xs font-medium text-teal-700 ring-1 ring-inset ring-teal-700/10">
-                              {report.project?.name || 'Unknown Project'}
+                              {report.projectName || 'Unknown Project'}
                             </span>
                             <span className="text-sm text-gray-500 flex items-center gap-1">
                               <Clock className="w-3 h-3" />
@@ -193,7 +232,7 @@ export default function MyReportsPage() {
                       <X className="w-5 h-5" />
                     </button>
                   </div>
-                  
+
                   {error && (
                     <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm flex items-center gap-2">
                       <AlertCircle className="w-4 h-4" /> {error}
@@ -215,18 +254,23 @@ export default function MyReportsPage() {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Project / Category *</label>
-                        <select
-                          name="projectId"
-                          required
-                          value={formData.projectId || ''}
-                          onChange={handleInputChange}
-                          className="input-premium"
-                        >
-                          <option value="" disabled>Select a project</option>
-                          {projects.map(p => (
-                            <option key={p.id} value={p.id}>{p.name}</option>
-                          ))}
-                        </select>
+                        <div className="relative">
+                          <select
+                            name="projectId"
+                            required
+                            value={formData.projectId || ''}
+                            onChange={handleInputChange}
+                            className="input-premium appearance-none pr-8"
+                          >
+                            <option value="" disabled>Select a project</option>
+                            {projects.map(p => (
+                              <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                          </select>
+                          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-500">
+                            <ChevronDown className="w-4 h-4" />
+                          </div>
+                        </div>
                       </div>
                     </div>
 
@@ -246,10 +290,10 @@ export default function MyReportsPage() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Tasks Planned for Next Week *</label>
                       <textarea
-                        name="tasksPlanned"
+                        name="tasksPlannedNext"
                         required
                         rows={3}
-                        value={formData.tasksPlanned}
+                        value={formData.tasksPlannedNext}
                         onChange={handleInputChange}
                         className="input-premium resize-none"
                         placeholder="What are your goals for next week?"
@@ -286,8 +330,8 @@ export default function MyReportsPage() {
                         <label className="block text-sm font-medium text-gray-700 mb-1">Additional Notes (Optional)</label>
                         <input
                           type="text"
-                          name="notes"
-                          value={formData.notes}
+                          name="notesLinks"
+                          value={formData.notesLinks}
                           onChange={handleInputChange}
                           className="input-premium"
                           placeholder="Links or other notes"
