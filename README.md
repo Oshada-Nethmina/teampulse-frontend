@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Weekly Report Generator & Team Dashboard
 
-## Getting Started
+This project is the frontend implementation for the Weekly Report Generator & Team Dashboard assignment.
 
-First, run the development server:
+## Features
+
+- **Authentication & Roles**: Users can login as a `TEAM_MEMBER` or `MANAGER`. The mock state is maintained via a React Context and `localStorage`.
+- **Personal Weekly Reports**: Team members can create and submit standard weekly reports. Past reports are listed below the form.
+- **Manager Dashboard**: Managers get an exclusive view with key metrics (submission counts, open blockers) and visual charts (Tasks Completed Trend, Workload Distribution) powered by `recharts`.
+- **Projects Management**: Skeleton interface accessible by Managers to track different work categories.
+
+## Setup Instructions
+
+### 1. Installing dependencies
+
+Navigate to the project root and run:
+
+```bash
+npm install
+```
+
+### 2. Running frontend
+
+Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Running backend
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+(Not implemented as per "I want to create only front end" request). The frontend uses an in-memory mocked state.
 
-## Learn More
+### 4. Running database
 
-To learn more about Next.js, take a look at the following resources:
+(Not implemented as per "I want to create only front end" request).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Technologies Used
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Framework**: Next.js (App Router)
+- **Styling**: Vanilla CSS Modules (no Tailwind)
+- **Icons**: Lucide React
+- **Charts**: Recharts
