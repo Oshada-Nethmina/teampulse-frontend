@@ -36,7 +36,7 @@ A modern **Next.js** application for the **Weekly Report Generator & Team Dashbo
 Clone the repository:
 
 ```bash
-git clone <frontend-repository-url>
+git clone https://github.com/Oshada-Nethmina/teampulse-frontend.git
 cd teampulse-frontend
 ```
 
