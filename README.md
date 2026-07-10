@@ -1,45 +1,114 @@
-# Weekly Report Generator & Team Dashboard
+# TeamPulse Frontend
 
-This project is the frontend implementation for the Weekly Report Generator & Team Dashboard assignment.
+A modern **Next.js** application for the **Weekly Report Generator & Team Dashboard**. It enables team members to submit weekly reports and managers to monitor team performance through an interactive dashboard.
 
 ## Features
 
-- **Authentication & Roles**: Users can login as a `TEAM_MEMBER` or `MANAGER`. The mock state is maintained via a React Context and `localStorage`.
-- **Personal Weekly Reports**: Team members can create and submit standard weekly reports. Past reports are listed below the form.
-- **Manager Dashboard**: Managers get an exclusive view with key metrics (submission counts, open blockers) and visual charts (Tasks Completed Trend, Workload Distribution) powered by `recharts`.
-- **Projects Management**: Skeleton interface accessible by Managers to track different work categories.
+* JWT Authentication
+* Role-Based Access Control
+* Weekly Report Management
+* Manager Dashboard
+* Project Management
+* Charts & Analytics
+* AI Chat Assistant UI (API key required)
+* Responsive Design
+* Built with reusable React components
 
-## Setup Instructions
+## Tech Stack
 
-### 1. Installing dependencies
+* Next.js
+* React
+* TypeScript
+* Tailwind CSS
+* Axios
+* React Hook Form
+* Recharts
+* React Hot Toast
 
-Navigate to the project root and run:
+## Prerequisites
+
+* Node.js 18+
+* npm or yarn
+* Backend API running
+
+## Installation
+
+Clone the repository:
+
+```bash
+git clone <frontend-repository-url>
+cd teampulse-frontend
+```
+
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-### 2. Running frontend
+## Environment Variables
 
-Start the development server:
+Create a `.env.local` file.
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8080/api
+```
+
+## Running the Application
+
+Development mode:
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Production build:
 
-### 3. Running backend
+```bash
+npm run build
+npm start
+```
 
-(Not implemented as per "I want to create only front end" request). The frontend uses an in-memory mocked state.
+The application will be available at:
 
-### 4. Running database
+```
+http://localhost:3000
+```
 
-(Not implemented as per "I want to create only front end" request).
+## Project Structure
 
-## Technologies Used
+```
+src/
+ ├── app/
+ ├── components/
+ ├── hooks/
+ ├── lib/
+ ├── services/
+ ├── types/
+ └── utils/
+```
 
-- **Framework**: Next.js (App Router)
-- **Styling**: Vanilla CSS Modules (no Tailwind)
-- **Icons**: Lucide React
-- **Charts**: Recharts
+## AI Assistant
+
+The frontend includes an AI Chat interface.
+
+To enable AI responses:
+
+* Configure the backend with a valid OpenAI API key.
+* Ensure the backend AI endpoint is available.
+
+Without an API key, the chat interface will be visible, but AI responses will not be generated.
+
+## Available Scripts
+
+```bash
+npm run dev
+npm run build
+npm run lint
+```
+
+## Backend Repository
+
+Run the backend before starting the frontend.
+
+
